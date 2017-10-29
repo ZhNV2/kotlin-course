@@ -1,14 +1,28 @@
 package ru.spbau.mit
 
-fun getGreeting(): String {
-    val words = mutableListOf<String>()
-    words.add("Hello,")
-    
-    words.add("world!")
+import org.antlr.v4.runtime.BufferedTokenStream
+import org.antlr.v4.runtime.CharStreams
+import ru.spbau.mit.ast.AstBuilder
+import ru.spbau.mit.execution.AstExecVisitor
+import ru.spbau.mit.parser.FunLexer
+import ru.spbau.mit.parser.FunParser
+import java.nio.file.Files
+import java.nio.file.Paths
 
-    return words.joinToString(separator = " ")
+fun execute(file: String): String {
+    val funLexer = FunLexer(CharStreams.fromString(String(Files.readAllBytes(Paths.get(file)))))
+    val funParser = FunParser(BufferedTokenStream(funLexer))
+
+    val ast = AstBuilder().visit(funParser.file())
+    val visitor = AstExecVisitor.build()
+    ast.accept(visitor)
+    return visitor.output
 }
 
 fun main(args: Array<String>) {
-    println(getGreeting())
+    if (args.isEmpty()) {
+        println("specify file to interpret")
+        return
+    }
+    println(execute(args[0]))
 }

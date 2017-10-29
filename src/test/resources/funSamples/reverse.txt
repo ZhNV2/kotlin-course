@@ -1,0 +1,8 @@
+fun print(n) {
+    while (n) {
+        println(n % 10)
+        n = n / 10
+    }
+}
+
+print(4532)
