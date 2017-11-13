@@ -11,9 +11,10 @@ class Solver(private val universities: List<Int>, private val edges: List<Edge>)
     private val isUniversity: List<Boolean>
 
     init {
-        val isUniversityMutable: MutableList<Boolean> = MutableList(n + 1, { false })
-        universities.forEach {
-            isUniversityMutable[it] = true
+        val isUniversityMutable: MutableList<Boolean> = MutableList(n + 1, { false }).apply {
+            universities.forEach {
+                this[it] = true
+            }
         }
         isUniversity = isUniversityMutable.toList()
     }
@@ -21,14 +22,13 @@ class Solver(private val universities: List<Int>, private val edges: List<Edge>)
     private fun dfsBuildTree(node: Int, depth: Int, used: MutableList<Boolean>,
                              neighbours: List<MutableList<Int>>): TreeNode {
         val children: MutableList<TreeNode> = mutableListOf()
-        var universitiesInSubTree: Int = isUniversity[node].toInt()
         used[node] = true
-        neighbours[node]
+        val universitiesInSubTree: Int = isUniversity[node].toInt() + neighbours[node]
             .filterNot { used[it] }
-            .forEach {
+            .sumBy {
                 val child: TreeNode = dfsBuildTree(it, depth + 1, used, neighbours)
-                universitiesInSubTree += child.universitiesInSubtree
                 children.add(child)
+                child.universitiesInSubtree
             }
         return TreeNode(children, depth, universitiesInSubTree, node)
     }
@@ -41,20 +41,18 @@ class Solver(private val universities: List<Int>, private val edges: List<Edge>)
         }
         val used: MutableList<Boolean> = MutableList(n + 1, { false })
         val root: TreeNode = dfsBuildTree(1, 0, used, neighbours)
-        (1 .. n)
-            .filterNot { used[it] }
-            .forEach { throw IllegalArgumentException("given list of edges does not describe tree") }
+        assert(used.subList(1, n + 1).all { it }) {"given list of edges does not describe tree"}
         return root
     }
 
     private fun dfsGetLcaAnswer(root: TreeNode, toConnect: Int): Long {
         root.children
-            .filter { it.universitiesInSubtree * 2 > universities.size }
-            .forEach {
-                val new = universities.size - toConnect - it.universitiesInSubtree
-                return new.toLong() * 2 * root.depth +
-                    dfsGetLcaAnswer(it, new + toConnect)
-            }
+                .firstOrNull { it.universitiesInSubtree * 2 > universities.size }
+                ?.let {
+                    val new = universities.size - toConnect - it.universitiesInSubtree
+                    return new.toLong() * 2 * root.depth +
+                            dfsGetLcaAnswer(it, new + toConnect)
+                }
         return (universities.size.toLong() - 2 * toConnect) * root.depth
     }
 
