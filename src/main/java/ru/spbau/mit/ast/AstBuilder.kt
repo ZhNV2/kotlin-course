@@ -1,100 +1,129 @@
 package ru.spbau.mit.ast
 
-import org.antlr.v4.runtime.tree.ErrorNode
-import org.antlr.v4.runtime.tree.ParseTree
-import org.antlr.v4.runtime.tree.RuleNode
 import org.antlr.v4.runtime.tree.TerminalNode
 import ru.spbau.mit.parser.FunParser
-import ru.spbau.mit.parser.FunVisitor
 
-class FunAstBuilder() : FunVisitor<FunAstNode> {
-    override fun visitFile(ctx: FunParser.FileContext?): FunAstNode {
-        val block = ctx!!.block().accept(this)
+class AstBuilder {
+
+    fun buildFile(ctx: FunParser.FileContext?): FileNode {
+        val block = buildBlock(ctx!!.block())
         return FileNode(block)
     }
 
-    override fun visitBlock(ctx: FunParser.BlockContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildBlock(ctx: FunParser.BlockContext?): BlockNode {
+        val nodes: MutableList<StatementNode> = mutableListOf()
+        ctx!!.statement().forEach { nodes.add(buildStatement(it)) }
+        return BlockNode(nodes)
     }
 
-    override fun visitBlockWithBraces(ctx: FunParser.BlockWithBracesContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildBlockWithBraces(ctx: FunParser.BlockWithBracesContext?): BlockNode {
+        return buildBlock(ctx!!.block())
     }
 
-    override fun visitStatement(ctx: FunParser.StatementContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildStatement(ctx: FunParser.StatementContext?): StatementNode {
+        return when {
+            ctx!!.println() != null -> buildPrintln(ctx.println())
+            ctx.whileT() != null -> buildWhileT(ctx.whileT())
+            ctx.ifT() != null -> buildIfT(ctx.ifT())
+            ctx.returnT() != null -> buildReturnT(ctx.returnT())
+            ctx.variable() != null -> buildVariable(ctx.variable())
+            ctx.function() != null -> buildFunction(ctx.function())
+            ctx.assignment() != null -> buildAssignment(ctx.assignment())
+            ctx.expression() != null -> buildExpression(ctx.expression())
+            else -> throw IllegalStateException("statement has unknown type")
+        }
     }
 
-    override fun visitPrintln(ctx: FunParser.PrintlnContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildPrintln(ctx: FunParser.PrintlnContext?): PrintlnNode {
+        return PrintlnNode(buildArguments(ctx!!.arguments()))
     }
 
-    override fun visitFunction(ctx: FunParser.FunctionContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildFunction(ctx: FunParser.FunctionContext?): FunctionNode {
+        val identifiers = ctx!!.Identifier()
+        val name = buildTerminalNode(identifiers[0])
+        val argNames = mutableListOf<String>()
+        identifiers.subList(1, identifiers.size).forEach {
+            argNames.add(buildTerminalNode(it))
+        }
+        val body = buildBlockWithBraces(ctx.blockWithBraces())
+        return FunctionNode(name, argNames, body)
     }
 
-    override fun visitParameterNames(ctx: FunParser.ParameterNamesContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildVariable(ctx: FunParser.VariableContext?): VariableNode {
+        val varName = buildTerminalNode(ctx!!.Identifier())
+        val varValue = buildExpression(ctx.expression())
+        return VariableNode(varName, varValue)
     }
 
-    override fun visitVariable(ctx: FunParser.VariableContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildWhileT(ctx: FunParser.WhileTContext?): WhileNode {
+        val cond = buildExpression(ctx!!.expression())
+        val body = buildBlockWithBraces(ctx.blockWithBraces())
+        return WhileNode(cond, body)
     }
 
-    override fun visitChildren(node: RuleNode?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildIfT(ctx: FunParser.IfTContext?): IfNode {
+        val cond = buildExpression(ctx!!.expression())
+        val bodies = ctx.blockWithBraces()
+        val ifBody = buildBlockWithBraces(bodies[0])
+        val elseBody = if (bodies.size == 1) null else buildBlockWithBraces(bodies[1])
+        return IfNode(cond, ifBody, elseBody)
     }
 
-    override fun visitWhileT(ctx: FunParser.WhileTContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildAssignment(ctx: FunParser.AssignmentContext?): AssignmentNode {
+        val varName = buildTerminalNode(ctx!!.Identifier())
+        val newValue = buildExpression(ctx.expression())
+        return AssignmentNode(varName, newValue)
     }
 
-    override fun visitIfT(ctx: FunParser.IfTContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildReturnT(ctx: FunParser.ReturnTContext?): ReturnNode {
+        return ReturnNode(buildExpression(ctx!!.expression()))
     }
 
-    override fun visitAssignment(ctx: FunParser.AssignmentContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildExpression(ctx: FunParser.ExpressionContext?): ExpressionNode {
+        val children = ctx!!.children
+        return if (children.size == 1) {
+            when {
+                ctx.expressionInBrackets() != null -> buildExpressionInBrackets(ctx.expressionInBrackets())
+                ctx.`var`() != null -> buildVar(ctx.`var`())
+                ctx.literal() != null -> buildLiteral(ctx.literal())
+                ctx.functionCall() != null -> buildFunctionCall(ctx.functionCall())
+                else -> throw IllegalStateException("unknown expression type")
+            }
+        } else {
+            val expressions = ctx.expression()
+            val left = buildExpression(expressions[0])
+            val op = ctx.op.text
+            val right = buildExpression(expressions[1])
+            BinaryExpressionNode(left, op, right)
+        }
     }
 
-    override fun visitReturnT(ctx: FunParser.ReturnTContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildVar(ctx: FunParser.VarContext?): VarNode {
+        return VarNode(ctx!!.text)
     }
 
-    override fun visitExpression(ctx: FunParser.ExpressionContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildExpressionInBrackets(ctx: FunParser.ExpressionInBracketsContext?): ExpressionNode {
+        return buildExpression(ctx!!.expression())
     }
 
-    override fun visitExpressionInBrackets(ctx: FunParser.ExpressionInBracketsContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildFunctionCall(ctx: FunParser.FunctionCallContext?): FunctionCallNode {
+        val name = buildTerminalNode(ctx!!.Identifier())
+        val args = buildArguments(ctx.arguments())
+        return FunctionCallNode(name, args)
     }
 
-    override fun visitFunctionCall(ctx: FunParser.FunctionCallContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildArguments(ctx: FunParser.ArgumentsContext?): List<ExpressionNode> {
+        val nodes = mutableListOf<ExpressionNode>()
+        ctx!!.expression().forEach { nodes.add(buildExpression(it)) }
+        return nodes
     }
 
-    override fun visitArguments(ctx: FunParser.ArgumentsContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildTerminalNode(terminalNode: TerminalNode): String {
+        return terminalNode.text
     }
 
-    override fun visitIdentifier(ctx: FunParser.IdentifierContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun visitLiteral(ctx: FunParser.LiteralContext?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun visitTerminal(node: TerminalNode?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun visit(tree: ParseTree?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun visitErrorNode(node: ErrorNode?): FunAstNode {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun buildLiteral(ctx: FunParser.LiteralContext?): LiteralNode {
+        return LiteralNode(ctx!!.Literal().text.toInt())
     }
 
 }

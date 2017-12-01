@@ -1,0 +1,5 @@
+fun f(n) {
+    return n
+}
+
+f(a)

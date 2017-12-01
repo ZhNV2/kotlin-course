@@ -1,7 +1,6 @@
-package ru.spbau.mit.ast
+package ru.spbau.mit.execution
 
-import ru.spbau.mit.ExecutionContext
-import ru.spbau.mit.Function
+import ru.spbau.mit.ast.*
 import ru.spbau.mit.exception.IllegalNumberOfArguments
 
 class AstExecVisitor private constructor(private val execCtx: ExecutionContext) : AstVisitor<Int?> {
@@ -63,11 +62,11 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
 
     override fun visit(ifNodeNode: IfNode): Int? {
         if (checkCondition(ifNodeNode.condition)) {
-            return ifNodeNode.ifBody.accept(this);
+            return ifNodeNode.ifBody.accept(this)
         } else if (ifNodeNode.elseBody != null) {
-            return ifNodeNode.elseBody.accept(this);
+            return ifNodeNode.elseBody.accept(this)
         }
-        return null;
+        return null
     }
 
     override fun visit(assignmentNode: AssignmentNode): Int? {
@@ -96,7 +95,7 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
         return varNode.accept(ExpressionExecVisitor())
     }
 
-    inner class ExpressionExecVisitor: ExpressionVisitor<Int> {
+    inner class ExpressionExecVisitor : ExpressionVisitor<Int> {
         override fun visit(literalNode: LiteralNode): Int {
             return literalNode.value
         }
@@ -150,7 +149,6 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
         override fun visit(varNode: VarNode): Int {
             return execCtx.getVar(varNode.name)
         }
-
 
     }
 

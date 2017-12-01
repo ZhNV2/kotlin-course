@@ -1,0 +1,5 @@
+fun f(n) {
+    return n
+}
+
+println(f(2, 3))

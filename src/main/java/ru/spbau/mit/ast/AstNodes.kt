@@ -1,97 +1,144 @@
 package ru.spbau.mit.ast
 
+import ru.spbau.mit.execution.ExpressionVisitor
+
 interface AstNode {
-    fun <T> accept(visitor: AstVisitor<T>)
+    fun <T> accept(visitor: AstVisitor<T>): T
 }
 
 interface StatementNode : AstNode
 
-interface ExpressionNode : StatementNode
+interface ExpressionNode : StatementNode {
 
-data class FileNode(val block: AstNode) : AstNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
-        return visitor.visit(this)
-    }
+    fun <T> accept(visitor: ExpressionVisitor<T>): T
+
 }
 
-data class BlockNode(val statements: List<AstNode>) : AstNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class FileNode(val block: BlockNode) : AstNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class PrintlnNode(val args: List<AstNode>): StatementNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class BlockNode(val statements: List<StatementNode>) : AstNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class FunctionNode(val name: AstNode,
-                        val argNames: List<AstNode>,
-                        val body: AstNode) : StatementNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class PrintlnNode(val args: List<ExpressionNode>) : StatementNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class VariableNode(val varName: AstNode,
-                        val varValue: AstNode) : StatementNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class FunctionNode(val name: String,
+                        val argNames: List<String>,
+                        val body: BlockNode) : StatementNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class WhileNode(val condition: AstNode,
-                     val body: AstNode) : StatementNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class VariableNode(val varName: String,
+                        val varValue: ExpressionNode) : StatementNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class IfNode(val condition: AstNode,
-                  val ifBody: AstNode,
-                  val elseBody: AstNode?) : StatementNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class WhileNode(val condition: ExpressionNode,
+                     val body: BlockNode) : StatementNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class AssignmentNode(val varName: AstNode,
-                          val newValue: AstNode) : StatementNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class IfNode(val condition: ExpressionNode,
+                  val ifBody: BlockNode,
+                  val elseBody: BlockNode?) : StatementNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class ReturnNode(val value: AstNode) : StatementNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class AssignmentNode(val varName: String,
+                          val newValue: ExpressionNode) : StatementNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
+}
+
+data class ReturnNode(val value: ExpressionNode) : StatementNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
+        return visitor.visit(this)
+    }
+
+}
+
+data class VarNode(val name: String) : ExpressionNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
+        return visitor.visit(this)
+    }
+
+    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
+        return visitor.visit(this)
+    }
+
 }
 
 data class LiteralNode(val value: Int) : ExpressionNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
-}
 
-data class IdentifierNode(val name: String) : ExpressionNode {
-    override fun <T> accept(visitor: AstVisitor<T>) {
+    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
         return visitor.visit(this)
     }
+
 }
 
-data class BinaryExpressionNode(val left: AstNode,
+data class BinaryExpressionNode(val left: ExpressionNode,
                                 val op: String,
-                                val right: AstNode) : ExpressionNode{
-    override fun <T> accept(visitor: AstVisitor<T>) {
+                                val right: ExpressionNode) : ExpressionNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
         return visitor.visit(this)
     }
+
+    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
+        return visitor.visit(this)
+    }
+
 }
 
-data class FunctionCallNode(val name: AstNode,
-                            val args: List<AstNode>) : ExpressionNode{
-    override fun <T> accept(visitor: AstVisitor<T>) {
+data class FunctionCallNode(val name: String,
+                            val args: List<ExpressionNode>) : ExpressionNode {
+
+    override fun <T> accept(visitor: AstVisitor<T>): T {
+        return visitor.visit(this)
+    }
+
+    override fun <T> accept(visitor: ExpressionVisitor<T>): T {
         return visitor.visit(this)
     }
 

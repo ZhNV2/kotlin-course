@@ -1,6 +1,5 @@
-package ru.spbau.mit
+package ru.spbau.mit.execution
 
-import org.antlr.v4.runtime.ParserRuleContext
 import ru.spbau.mit.exception.DoubleDefinitionException
 import ru.spbau.mit.exception.FuncIsNotInScopeException
 import ru.spbau.mit.exception.VarIsNotInScopeException
@@ -58,7 +57,7 @@ class ExecutionContext(private val ctx: MutableList<RuntimeContext>) {
         ctx.removeAt(ctx.lastIndex)
     }
 
-    fun copy(): ExecutionContext  {
+    fun copy(): ExecutionContext {
         val list = mutableListOf<RuntimeContext>()
         ctx.forEach { list.add(it) }
         return ExecutionContext(list)

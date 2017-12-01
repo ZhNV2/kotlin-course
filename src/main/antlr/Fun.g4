@@ -19,51 +19,38 @@ statement
 
 println: 'println' '(' arguments ')';
 
-function: 'fun' Identifier '(' parameterNames ')' blockWithBraces;
-
-parameterNames: ((Identifier ',')* Identifier)?;
+function: 'fun' Identifier '(' ((Identifier ',')* Identifier)? ')' blockWithBraces;
 
 variable: 'var' Identifier ('=' expression)?;
 
-whileT: 'while' expressionInBrackets blockWithBraces;
+whileT: 'while' '(' expression ')' blockWithBraces;
 
-ifT: 'if' expressionInBrackets blockWithBraces ('else' blockWithBraces)?;
+ifT: 'if' '(' expression ')' blockWithBraces ('else' blockWithBraces)?;
 
 assignment: Identifier '=' expression;
 
 returnT: 'return' expression;
 
 expression
-    :   functionCall
-    |   eval
-    |   expressionInBrackets
-    |   Identifier
+    :   expressionInBrackets
+    |   functionCall
+    |   literal
+    |   expression op=('*' | '/' | '%') expression
+    |   expression op=('+' | '-' ) expression
+    |   expression op=('>' | '<' | '<=' | '>='| '==' | '!=') expression
+    |   expression op=('&&'| '||') expression
+    |   var
     ;
 
-expressionInBrackets
-    :   '(' (   expression
-            |   binaryExpression
-            )
-        ')'
-    ;
+var: Identifier;
+
+expressionInBrackets: '(' expression ')';
 
 functionCall: Identifier '(' arguments ')';
 
 arguments: ((expression ',')* expression)?;
 
-binaryExpression
-    :   expression sign=(    '>'
-                    |   '<'
-                    |   '<='
-                    |   '>='
-                    |   '=='
-                    |   '!='
-                    |   '||'
-                    |   '&&'
-                    )
-        expression
-    ;
-
+literal: Literal;
 
 Identifier
     :   Nondigit
@@ -77,27 +64,5 @@ Nondigit:   [a-zA-Z_];
 Literal: [0] | [1-9] Digit*;
 
 Digit: [0-9];
-
-eval: additionExp;
-
-additionExp: multiplyExp (multiplyExpWithSign)*;
-
-multiplyExpWithSign: plusMultiplyExp | minusMultiplyExp;
-plusMultiplyExp: '+' multiplyExp;
-minusMultiplyExp: '-' multiplyExp;
-
-multiplyExp: atomExp (atomExpWithSign)*;
-
-atomExpWithSign: mulAtomExp | divAtomExp | modAtomExp;
-mulAtomExp: '*' atomExp;
-divAtomExp: '/' atomExp;
-modAtomExp: '%' atomExp;
-
-atomExp
-    :   Literal
-    |   functionCall
-    |   Identifier
-    |   expressionInBrackets
-    ;
 
 WS : (' ' | '\t' | '\r'| '\n') -> skip;
