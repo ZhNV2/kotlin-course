@@ -3,7 +3,7 @@ package ru.spbau.mit.execution
 import ru.spbau.mit.ast.*
 import ru.spbau.mit.exception.IllegalNumberOfArguments
 
-class AstExecVisitor private constructor(private val execCtx: ExecutionContext) : AstVisitor<Int?> {
+class AstExecVisitor private constructor(private var scope: Scope) : AstVisitor<Int?> {
 
     private val outputBuilder = StringBuilder()
 
@@ -15,13 +15,13 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
     }
 
     override fun visit(blockNode: BlockNode): Int? {
-        execCtx.addRuntimeContext()
+        scope = Scope.from(scope)
         for (statement in blockNode.statements) {
             statement.accept(this)?.let {
                 return it
             }
         }
-        execCtx.removeRuntimeContext()
+        scope = scope.prev
         return null
     }
 
@@ -34,14 +34,14 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
     override fun visit(functionNode: FunctionNode): Int? {
         val funcName = functionNode.name
         val argNames = functionNode.argNames
-        execCtx.putFunc(funcName, Function(execCtx.copy(), functionNode.body, argNames))
+        scope.putFunc(funcName, Function(scope, functionNode.body, argNames))
         return null
     }
 
 
     override fun visit(variableNode: VariableNode): Int? {
         val value = variableNode.varValue.accept(this) as Int
-        execCtx.putVar(variableNode.varName, value, false)
+        scope.putVar(variableNode.varName, value, false)
         return null
     }
 
@@ -70,7 +70,7 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
 
     override fun visit(assignmentNode: AssignmentNode): Int? {
         val newValue = assignmentNode.newValue.accept(this) as Int
-        execCtx.putVar(assignmentNode.varName, newValue, true)
+        scope.putVar(assignmentNode.varName, newValue, true)
         return null
     }
 
@@ -129,13 +129,12 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
         }
 
         override fun visit(functionCallNode: FunctionCallNode): Int {
-            val func = execCtx.getFunc(functionCallNode.name)
+            val func = scope.getFunc(functionCallNode.name)
             val args = functionCallNode.args.map { it.accept(this) }
             if (func.argNames.size != args.size) {
                 throw IllegalNumberOfArguments("${functionCallNode.name} was called with invalid number of params")
             }
-            val funcCtx = func.execCtx.copy()
-            funcCtx.addRuntimeContext()
+            val funcCtx = Scope.from(func.scope)
             for (i in 0 until func.argNames.size) {
                 funcCtx.putVar(func.argNames[i], args[i], false)
             }
@@ -146,13 +145,13 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
         }
 
         override fun visit(varNode: VarNode): Int {
-            return execCtx.getVar(varNode.name)
+            return scope.getVar(varNode.name)
         }
 
     }
 
     companion object {
-        fun build() = AstExecVisitor(ExecutionContext.empty())
+        fun build() = AstExecVisitor(Scope.empty())
     }
 
 }
