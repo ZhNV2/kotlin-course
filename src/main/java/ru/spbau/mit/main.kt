@@ -16,7 +16,7 @@ fun execute(file: String): String {
     val ast = AstBuilder().buildFile(funParser.file())
     val visitor = AstExecVisitor.build()
     ast.accept(visitor)
-    return visitor.getOutput()
+    return visitor.output
 }
 
 fun main(args: Array<String>) {

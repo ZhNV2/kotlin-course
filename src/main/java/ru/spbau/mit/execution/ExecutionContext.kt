@@ -31,9 +31,8 @@ class ExecutionContext(private val ctx: MutableList<RuntimeContext>) {
 
     fun getVar(name: String): Int {
         for (runtimeContext in ctx.reversed()) {
-            val value = runtimeContext.getVar(name)
-            if (value != null) {
-                return value
+            runtimeContext.getVar(name)?.let {
+                return it
             }
         }
         throw VarIsNotInScopeException(name)
@@ -41,9 +40,8 @@ class ExecutionContext(private val ctx: MutableList<RuntimeContext>) {
 
     fun getFunc(name: String): Function {
         for (runtimeContext in ctx.reversed()) {
-            val func = runtimeContext.getFunc(name)
-            if (func != null) {
-                return func
+            runtimeContext.getFunc(name)?.let {
+                return it
             }
         }
         throw FuncIsNotInScopeException(name)

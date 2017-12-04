@@ -68,6 +68,6 @@ class ExecuteTest {
     private fun assert(ast: AstNode, expected: String) {
         val visitor = AstExecVisitor.build()
         ast.accept(visitor)
-        assertEquals(expected, visitor.getOutput())
+        assertEquals(expected, visitor.output)
     }
 }

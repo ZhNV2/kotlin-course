@@ -5,9 +5,10 @@ import ru.spbau.mit.exception.IllegalNumberOfArguments
 
 class AstExecVisitor private constructor(private val execCtx: ExecutionContext) : AstVisitor<Int?> {
 
-    private val output = StringBuilder()
+    private val outputBuilder = StringBuilder()
 
-    fun getOutput() = output.toString()
+    val output
+        get() = outputBuilder.toString()
 
     override fun visit(fileNode: FileNode): Int? {
         return fileNode.block.accept(this)
@@ -16,9 +17,8 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
     override fun visit(blockNode: BlockNode): Int? {
         execCtx.addRuntimeContext()
         for (statement in blockNode.statements) {
-            val res = statement.accept(this)
-            if (res != null) {
-                return res
+            statement.accept(this)?.let {
+                return it
             }
         }
         execCtx.removeRuntimeContext()
@@ -26,8 +26,8 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
     }
 
     override fun visit(printlnNode: PrintlnNode): Int? {
-        output.append(printlnNode.args.map { it.accept(this) }.joinToString(" "))
-        output.append("\n")
+        outputBuilder.append(printlnNode.args.map { it.accept(this) }.joinToString(" "))
+        outputBuilder.append("\n")
         return null
     }
 
@@ -47,9 +47,8 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
 
     override fun visit(whileNode: WhileNode): Int? {
         while (checkCondition(whileNode.condition)) {
-            val res = whileNode.body.accept(this)
-            if (res != null) {
-                return res
+            whileNode.body.accept(this)?.let {
+                return it
             }
         }
         return null
@@ -142,7 +141,7 @@ class AstExecVisitor private constructor(private val execCtx: ExecutionContext) 
             }
             val execVisitor = AstExecVisitor(funcCtx)
             val res = func.block.accept(execVisitor) ?: 0
-            output.append(execVisitor.output)
+            outputBuilder.append(execVisitor.outputBuilder)
             return res
         }
 
