@@ -1,129 +1,109 @@
 package ru.spbau.mit.ast
 
 import org.antlr.v4.runtime.tree.TerminalNode
+import ru.spbau.mit.parser.FunBaseVisitor
 import ru.spbau.mit.parser.FunParser
 
-class AstBuilder {
-
-    fun buildFile(ctx: FunParser.FileContext): FileNode {
-        val block = buildBlock(ctx.block())
+class AstBuilder : FunBaseVisitor<AstNode>() {
+    
+    override fun visitFile(ctx: FunParser.FileContext): FileNode {
+        val block = visitBlock(ctx.block())
         return FileNode(block)
     }
 
-    fun buildBlock(ctx: FunParser.BlockContext): BlockNode {
+    override fun visitBlock(ctx: FunParser.BlockContext): BlockNode {
         val nodes: MutableList<StatementNode> = mutableListOf()
-        ctx.statement().forEach { nodes.add(buildStatement(it)) }
+        ctx.statement().forEach { nodes.add(visitStatement(it) as StatementNode) }
         return BlockNode(nodes)
     }
 
-    fun buildBlockWithBraces(ctx: FunParser.BlockWithBracesContext): BlockNode {
-        return buildBlock(ctx.block())
+    override fun visitBlockWithBraces(ctx: FunParser.BlockWithBracesContext): BlockNode {
+        return visitBlock(ctx.block())
     }
 
-    fun buildStatement(ctx: FunParser.StatementContext): StatementNode {
-        return when {
-            ctx.println() != null -> buildPrintln(ctx.println())
-            ctx.whileT() != null -> buildWhileT(ctx.whileT())
-            ctx.ifT() != null -> buildIfT(ctx.ifT())
-            ctx.returnT() != null -> buildReturnT(ctx.returnT())
-            ctx.variable() != null -> buildVariable(ctx.variable())
-            ctx.function() != null -> buildFunction(ctx.function())
-            ctx.assignment() != null -> buildAssignment(ctx.assignment())
-            ctx.expression() != null -> buildExpression(ctx.expression())
-            else -> throw IllegalStateException("statement has unknown type")
-        }
+    override fun visitPrintln(ctx: FunParser.PrintlnContext): PrintlnNode {
+        return PrintlnNode(visitArgumentsNode(ctx.arguments()))
     }
 
-    fun buildPrintln(ctx: FunParser.PrintlnContext): PrintlnNode {
-        return PrintlnNode(buildArguments(ctx.arguments()))
-    }
-
-    fun buildFunction(ctx: FunParser.FunctionContext): FunctionNode {
+    override fun visitFunction(ctx: FunParser.FunctionContext): FunctionNode {
         val identifiers = ctx.Identifier()
-        val name = buildTerminalNode(identifiers[0])
+        val name = visitTerminalNode(identifiers[0])
         val argNames = mutableListOf<String>()
         identifiers.subList(1, identifiers.size).forEach {
-            argNames.add(buildTerminalNode(it))
+            argNames.add(visitTerminalNode(it))
         }
-        val body = buildBlockWithBraces(ctx.blockWithBraces())
+        val body = visitBlockWithBraces(ctx.blockWithBraces())
         return FunctionNode(name, argNames, body)
     }
 
-    fun buildVariable(ctx: FunParser.VariableContext): VariableNode {
-        val varName = buildTerminalNode(ctx.Identifier())
-        val varValue = buildExpression(ctx.expression())
+    override fun visitVariable(ctx: FunParser.VariableContext): VariableNode {
+        val varName = visitTerminalNode(ctx.Identifier())
+        val varValue = visitExpression(ctx.expression())
         return VariableNode(varName, varValue)
     }
 
-    fun buildWhileT(ctx: FunParser.WhileTContext): WhileNode {
-        val cond = buildExpression(ctx.expression())
-        val body = buildBlockWithBraces(ctx.blockWithBraces())
+    override fun visitWhileT(ctx: FunParser.WhileTContext): WhileNode {
+        val cond = visitExpression(ctx.expression())
+        val body = visitBlockWithBraces(ctx.blockWithBraces())
         return WhileNode(cond, body)
     }
 
-    fun buildIfT(ctx: FunParser.IfTContext): IfNode {
-        val cond = buildExpression(ctx.expression())
+    override fun visitIfT(ctx: FunParser.IfTContext): IfNode {
+        val cond = visitExpression(ctx.expression())
         val bodies = ctx.blockWithBraces()
-        val ifBody = buildBlockWithBraces(bodies[0])
-        val elseBody = if (bodies.size == 1) null else buildBlockWithBraces(bodies[1])
+        val ifBody = visitBlockWithBraces(bodies[0])
+        val elseBody = if (bodies.size == 1) null else visitBlockWithBraces(bodies[1])
         return IfNode(cond, ifBody, elseBody)
     }
 
-    fun buildAssignment(ctx: FunParser.AssignmentContext): AssignmentNode {
-        val varName = buildTerminalNode(ctx.Identifier())
-        val newValue = buildExpression(ctx.expression())
+    override fun visitAssignment(ctx: FunParser.AssignmentContext): AssignmentNode {
+        val varName = visitTerminalNode(ctx.Identifier())
+        val newValue = visitExpression(ctx.expression())
         return AssignmentNode(varName, newValue)
     }
 
-    fun buildReturnT(ctx: FunParser.ReturnTContext): ReturnNode {
-        return ReturnNode(buildExpression(ctx.expression()))
+    override fun visitReturnT(ctx: FunParser.ReturnTContext): ReturnNode {
+        return ReturnNode(visitExpression(ctx.expression()))
     }
 
-    fun buildExpression(ctx: FunParser.ExpressionContext): ExpressionNode {
+    override fun visitExpression(ctx: FunParser.ExpressionContext): ExpressionNode {
         val children = ctx.children
-        return if (children.size == 1) {
-            when {
-                ctx.expressionInBrackets() != null -> buildExpressionInBrackets(ctx.expressionInBrackets())
-                ctx.`var`() != null -> buildVar(ctx.`var`())
-                ctx.literal() != null -> buildLiteral(ctx.literal())
-                ctx.functionCall() != null -> buildFunctionCall(ctx.functionCall())
-                else -> throw IllegalStateException("unknown expression type")
-            }
-        } else {
-            val expressions = ctx.expression()
-            val left = buildExpression(expressions[0])
-            val op = ctx.op.text
-            val right = buildExpression(expressions[1])
-            BinaryExpressionNode(left, op, right)
+        if (children.size == 1) {
+            return super.visitExpression(ctx) as ExpressionNode
         }
+        val expressions = ctx.expression()
+        val left = visitExpression(expressions[0])
+        val op = ctx.op.text
+        val right = visitExpression(expressions[1])
+        return BinaryExpressionNode(left, op, right)
     }
 
-    fun buildVar(ctx: FunParser.VarContext): VarNode {
+    override fun visitVar(ctx: FunParser.VarContext): VarNode {
         return VarNode(ctx.text)
     }
 
-    fun buildExpressionInBrackets(ctx: FunParser.ExpressionInBracketsContext): ExpressionNode {
-        return buildExpression(ctx.expression())
+    override fun visitExpressionInBrackets(ctx: FunParser.ExpressionInBracketsContext): ExpressionNode {
+        return visitExpression(ctx.expression())
     }
 
-    fun buildFunctionCall(ctx: FunParser.FunctionCallContext): FunctionCallNode {
-        val name = buildTerminalNode(ctx.Identifier())
-        val args = buildArguments(ctx.arguments())
+    override fun visitFunctionCall(ctx: FunParser.FunctionCallContext): FunctionCallNode {
+        val name = visitTerminalNode(ctx.Identifier())
+        val args = visitArgumentsNode(ctx.arguments())
         return FunctionCallNode(name, args)
     }
 
-    fun buildArguments(ctx: FunParser.ArgumentsContext): List<ExpressionNode> {
+    override fun visitLiteral(ctx: FunParser.LiteralContext): LiteralNode {
+        return LiteralNode(ctx.Literal().text.toInt())
+    }
+
+    private fun visitArgumentsNode(ctx: FunParser.ArgumentsContext): List<ExpressionNode> {
         val nodes = mutableListOf<ExpressionNode>()
-        ctx.expression().forEach { nodes.add(buildExpression(it)) }
+        ctx.expression().forEach { nodes.add(visitExpression(it)) }
         return nodes
     }
 
-    fun buildTerminalNode(terminalNode: TerminalNode): String {
+    private fun visitTerminalNode(terminalNode: TerminalNode): String {
         return terminalNode.text
-    }
-
-    fun buildLiteral(ctx: FunParser.LiteralContext): LiteralNode {
-        return LiteralNode(ctx.Literal().text.toInt())
     }
 
 }

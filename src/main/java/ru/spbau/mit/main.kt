@@ -13,7 +13,7 @@ fun execute(file: String): String {
     val funLexer = FunLexer(CharStreams.fromString(String(Files.readAllBytes(Paths.get(file)))))
     val funParser = FunParser(BufferedTokenStream(funLexer))
 
-    val ast = AstBuilder().buildFile(funParser.file())
+    val ast = AstBuilder().visit(funParser.file())
     val visitor = AstExecVisitor.build()
     ast.accept(visitor)
     return visitor.output

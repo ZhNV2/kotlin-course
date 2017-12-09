@@ -11,151 +11,151 @@ import ru.spbau.mit.parser.FunParser
 class AstTest {
 
     @Test
-    fun testBuildFile() {
-        val parsed = build(
+    fun testVisitFile() {
+        val parsed = visit(
                 """
                     |
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildFile(parsed.file())
+        val actual = AstBuilder().visitFile(parsed.file())
         val expected = FileNode(BlockNode(emptyList()))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildBlock() {
-        val parsed = build(
+    fun testVisitBlock() {
+        val parsed = visit(
                 """
                     |var a = 1
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildBlock(parsed.block())
+        val actual = AstBuilder().visitBlock(parsed.block())
         val expected = BlockNode(mutableListOf(VariableNode("a", LiteralNode(1))))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildPrintln() {
-        val parsed = build(
+    fun testVisitPrintln() {
+        val parsed = visit(
                 """
                     |println(2, a)
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildPrintln(parsed.println())
+        val actual = AstBuilder().visitPrintln(parsed.println())
         val expected = PrintlnNode(mutableListOf(LiteralNode(2), VarNode("a")))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildFunction() {
-        val parsed = build(
+    fun testVisitFunction() {
+        val parsed = visit(
                 """
                     |fun foo(x) {
                     |}
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildFunction(parsed.function())
+        val actual = AstBuilder().visitFunction(parsed.function())
         val expected = FunctionNode("foo", mutableListOf("x"), BlockNode(emptyList()))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildVariable() {
-        val parsed = build(
+    fun testVisitVariable() {
+        val parsed = visit(
                 """
                     |var a = foo(x)
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildVariable(parsed.variable())
+        val actual = AstBuilder().visitVariable(parsed.variable())
         val expected = VariableNode("a", FunctionCallNode("foo", mutableListOf(VarNode("x"))))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildWhile() {
-        val parsed = build(
+    fun testVisitWhile() {
+        val parsed = visit(
                 """
                     |while (x) {}
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildWhileT(parsed.whileT())
+        val actual = AstBuilder().visitWhileT(parsed.whileT())
         val expected = WhileNode(VarNode("x"), BlockNode(emptyList()))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildIf() {
-        val parsed = build(
+    fun testVisitIf() {
+        val parsed = visit(
                 """
                     |if (x) {} else {}
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildIfT(parsed.ifT())
+        val actual = AstBuilder().visitIfT(parsed.ifT())
         val expected = IfNode(VarNode("x"), BlockNode(emptyList()), BlockNode(emptyList()))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildAssignment() {
-        val parsed = build(
+    fun testVisitAssignment() {
+        val parsed = visit(
                 """
                     |a = 1
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildAssignment(parsed.assignment())
+        val actual = AstBuilder().visitAssignment(parsed.assignment())
         val expected = AssignmentNode("a", LiteralNode(1))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildReturn() {
-        val parsed = build(
+    fun testVisitReturn() {
+        val parsed = visit(
                 """
                     |return n + 1
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildReturnT(parsed.returnT())
+        val actual = AstBuilder().visitReturnT(parsed.returnT())
         val expected = ReturnNode(BinaryExpressionNode(VarNode("n"), "+", LiteralNode(1)))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildVar() {
-        val parsed = build(
+    fun testVisitVar() {
+        val parsed = visit(
                 """
                     |at
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildVar(parsed.`var`())
+        val actual = AstBuilder().visitVar(parsed.`var`())
         val expected = VarNode("at")
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildFunctionCall() {
-        val parsed = build(
+    fun testVisitFunctionCall() {
+        val parsed = visit(
                 """
                     |foo(bar(1))
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildFunctionCall(parsed.functionCall())
+        val actual = AstBuilder().visitFunctionCall(parsed.functionCall())
         val expected = FunctionCallNode("foo", mutableListOf(FunctionCallNode("bar", mutableListOf(LiteralNode(1)))))
         assertEquals(actual, expected)
     }
 
     @Test
-    fun testBuildLiteral() {
-        val parsed = build(
+    fun testVisitLiteral() {
+        val parsed = visit(
                 """
                     |10
                     """.trimMargin()
         )
-        val actual = AstBuilder().buildLiteral(parsed.literal())
+        val actual = AstBuilder().visitLiteral(parsed.literal())
         val expected = LiteralNode(10)
         assertEquals(actual, expected)
     }
 
-    private fun build(input: String): FunParser {
+    private fun visit(input: String): FunParser {
         return FunParser(BufferedTokenStream(FunLexer(CharStreams.fromString(input))))
     }
 
