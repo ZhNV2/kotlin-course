@@ -18,7 +18,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitFile(parsed.file())
-        val expected = FileNode(BlockNode(emptyList()))
+        val expected = FileNode(BlockNode(emptyList(), 1), 1)
         assertEquals(actual, expected)
     }
 
@@ -30,7 +30,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitBlock(parsed.block())
-        val expected = BlockNode(mutableListOf(VariableNode("a", LiteralNode(1))))
+        val expected = BlockNode(mutableListOf(VariableNode("a", LiteralNode(1, 1), 1)), 1)
         assertEquals(actual, expected)
     }
 
@@ -42,7 +42,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitPrintln(parsed.println())
-        val expected = PrintlnNode(mutableListOf(LiteralNode(2), VarNode("a")))
+        val expected = PrintlnNode(mutableListOf(LiteralNode(2, 1), VarNode("a", 1)), 1)
         assertEquals(actual, expected)
     }
 
@@ -55,7 +55,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitFunction(parsed.function())
-        val expected = FunctionNode("foo", mutableListOf("x"), BlockNode(emptyList()))
+        val expected = FunctionNode("foo", mutableListOf("x"), BlockNode(emptyList(), 2), 1)
         assertEquals(actual, expected)
     }
 
@@ -67,7 +67,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitVariable(parsed.variable())
-        val expected = VariableNode("a", FunctionCallNode("foo", mutableListOf(VarNode("x"))))
+        val expected = VariableNode("a", FunctionCallNode("foo", mutableListOf(VarNode("x", 1)), 1), 1)
         assertEquals(actual, expected)
     }
 
@@ -79,7 +79,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitWhileT(parsed.whileT())
-        val expected = WhileNode(VarNode("x"), BlockNode(emptyList()))
+        val expected = WhileNode(VarNode("x", 1), BlockNode(emptyList(), 1), 1)
         assertEquals(actual, expected)
     }
 
@@ -91,7 +91,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitIfT(parsed.ifT())
-        val expected = IfNode(VarNode("x"), BlockNode(emptyList()), BlockNode(emptyList()))
+        val expected = IfNode(VarNode("x", 1), BlockNode(emptyList(), 1), BlockNode(emptyList(), 1), 1)
         assertEquals(actual, expected)
     }
 
@@ -103,7 +103,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitAssignment(parsed.assignment())
-        val expected = AssignmentNode("a", LiteralNode(1))
+        val expected = AssignmentNode("a", LiteralNode(1, 1), 1)
         assertEquals(actual, expected)
     }
 
@@ -115,7 +115,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitReturnT(parsed.returnT())
-        val expected = ReturnNode(BinaryExpressionNode(VarNode("n"), "+", LiteralNode(1)))
+        val expected = ReturnNode(BinaryExpressionNode(VarNode("n",1), "+", LiteralNode(1, 1), 1), 1)
         assertEquals(actual, expected)
     }
 
@@ -127,7 +127,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitVar(parsed.`var`())
-        val expected = VarNode("at")
+        val expected = VarNode("at", 1)
         assertEquals(actual, expected)
     }
 
@@ -139,7 +139,7 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitFunctionCall(parsed.functionCall())
-        val expected = FunctionCallNode("foo", mutableListOf(FunctionCallNode("bar", mutableListOf(LiteralNode(1)))))
+        val expected = FunctionCallNode("foo", mutableListOf(FunctionCallNode("bar", mutableListOf(LiteralNode(1, 1)), 1)), 1)
         assertEquals(actual, expected)
     }
 
@@ -151,12 +151,13 @@ class AstTest {
                     """.trimMargin()
         )
         val actual = AstBuilder().visitLiteral(parsed.literal())
-        val expected = LiteralNode(10)
+        val expected = LiteralNode(10, 1)
         assertEquals(actual, expected)
     }
 
     private fun visit(input: String): FunParser {
         return FunParser(BufferedTokenStream(FunLexer(CharStreams.fromString(input))))
     }
+
 
 }

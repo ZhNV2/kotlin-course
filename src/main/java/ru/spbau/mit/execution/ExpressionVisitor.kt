@@ -5,13 +5,14 @@ import ru.spbau.mit.ast.FunctionCallNode
 import ru.spbau.mit.ast.LiteralNode
 import ru.spbau.mit.ast.VarNode
 
+@Suppress("EXPERIMENTAL_FEATURE_WARNING")
 interface ExpressionVisitor<T> {
 
-    fun visit(literalNode: LiteralNode): T
+    suspend fun visit(literalNode: LiteralNode): T
 
-    fun visit(binaryExpressionNode: BinaryExpressionNode): T
+    suspend fun visit(binaryExpressionNode: BinaryExpressionNode): T
 
-    fun visit(functionCallNode: FunctionCallNode): T
+    suspend fun visit(functionCallNode: FunctionCallNode): T
 
-    fun visit(varNode: VarNode): T
+    suspend fun visit(varNode: VarNode): T
 }

@@ -5,6 +5,9 @@ import ru.spbau.mit.exception.DoubleDefinitionException
 import ru.spbau.mit.exception.FuncIsNotInScopeException
 import ru.spbau.mit.exception.IllegalNumberOfArguments
 import ru.spbau.mit.exception.VarIsNotInScopeException
+import ru.spbau.mit.execution.AstExecVisitor
+import ru.spbau.mit.execution.SimpleContinuation
+import kotlin.coroutines.experimental.startCoroutine
 import kotlin.test.assertEquals
 
 class IntegrationTest {
@@ -67,8 +70,25 @@ class IntegrationTest {
 
 
     private fun assert(test: String, expectedOutput: String) {
-        val actualOutput = ru.spbau.mit.execute("$RESOURCES_PATH/$test.txt")
-        assertEquals(expectedOutput, actualOutput)
+        startEval(expectedOutput) {
+            executeFile("$RESOURCES_PATH/$test.txt")
+        }
     }
+
+    private fun startEval(expectedOutput: String, suspendLambda: suspend () -> String) {
+        suspendLambda.startCoroutine(object : SimpleContinuation<String>() {
+            override fun resume(value: String) {
+                assertEquals(expectedOutput, value)
+            }
+        })
+    }
+
+    private suspend fun executeFile(file: String): String {
+        val visitor = AstExecVisitor.build()
+        buildAstFromFile(file).accept(visitor)
+        return visitor.output
+    }
+
+
 
 }

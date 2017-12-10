@@ -92,6 +92,18 @@ open class Scope {
         return prev.getFunc(name)
     }
 
+    /**
+     * this function is useful when you want to
+     * calculate some expression without affecting
+     * current context (that's why method copies
+     * only vars)
+     */
+    open fun copy(): Scope {
+        return Scope(HashMap(vars), functions, prev.copy())
+    }
+
+
+
     companion object {
         fun empty() = Scope(mutableMapOf(), mutableMapOf(), NullScope)
         fun from(scope: Scope) = Scope(mutableMapOf(), mutableMapOf(), scope)
@@ -118,6 +130,10 @@ private object NullScope : Scope(mutableMapOf(), mutableMapOf()) {
 
     override fun containsFunc(name: String): Boolean {
         return false
+    }
+
+    override fun copy(): Scope {
+        return this
     }
 
 }

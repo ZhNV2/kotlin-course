@@ -3,7 +3,6 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     ext.kotlin_version = '1.1.51'
-
     repositories {
         mavenCentral()
     }
@@ -15,6 +14,11 @@ buildscript {
 apply plugin: 'antlr'
 apply plugin: 'java'
 apply plugin: 'kotlin'
+
+sourceSets {
+    main.java.srcDirs += 'src/main/kotlin/'
+    test.java.srcDirs += 'src/test/kotlin/'
+}
 
 sourceCompatibility = 1.8
 
@@ -34,6 +38,14 @@ generateGrammarSource {
     maxHeapSize = "64m"
     arguments += ['-package', 'ru.spbau.mit.parser', '-visitor']
     outputDirectory = new File("$buildDir/generated-src/antlr/main/ru/spbau/mit/parser")
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'ru.spbau.mit.MainKt'
+    }
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 

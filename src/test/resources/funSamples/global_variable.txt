@@ -1,0 +1,9 @@
+var cnt = 0
+fun foo(n) {
+    cnt = cnt + 1
+    return n + cnt
+}
+
+println(foo(1))
+println(foo(2))
+println(foo(3))
