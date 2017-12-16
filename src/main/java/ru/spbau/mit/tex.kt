@@ -2,11 +2,15 @@ package ru.spbau.mit
 
 import java.lang.String.join
 
+@DslMarker
+annotation class TexMarker
+
+@TexMarker
 interface Element {
     fun render(builder: StringBuilder)
 }
 
-class ElementWithText(private val text: String): Element {
+class ElementWithText(private val text: String) : Element {
     override fun render(builder: StringBuilder) {
         builder.append("$text\n")
     }
@@ -16,11 +20,11 @@ class BasicLine(
         private val title: String,
         private val param: String,
         private val additionalParam: String
-): Element {
+) : Element {
     override fun render(builder: StringBuilder) {
         val aParam = if (additionalParam == "") "" else "[$additionalParam]"
-        val parm = if (param == "" ) "" else "{$param}"
-        builder.append("\\$title$parm$aParam\n")
+        val param = if (param == "" ) "" else "{$param}"
+        builder.append("\\$title$param$aParam\n")
     }
 }
 
@@ -41,21 +45,10 @@ abstract class ElementWithChildren : Element {
     }
 }
 
-abstract class BasicSection : ElementWithChildren() {
-
-    operator fun String.unaryPlus() {
-        initChild(ElementWithText(this)) {}
-    }
-
-    fun math(text: String) {
-        initChild(BasicLine("math", text, "")) {}
-    }
-
-    fun alignment(init: Alignment.() -> Unit) = initChild(Alignment(), init)
-}
-
-abstract class BeginEndSection(private val title: String,
-                               private val defines: List<Pair<String, String> >): BasicSection() {
+abstract class BeginEndSection(
+        private val title: String,
+        private val defines: List<Pair<String, String>>
+) : ElementWithChildren() {
 
     override fun render(builder: StringBuilder) {
         val concatDefines = defines.map { it.first + "=" + it.second }
@@ -66,8 +59,27 @@ abstract class BeginEndSection(private val title: String,
 
 }
 
-abstract class ExtendedBeginEndSection(title: String,
-                                       defines: List<Pair<String, String> >): BeginEndSection(title, defines) {
+abstract class BeginEndSectionWithText(
+        title: String,
+        defines: List<Pair<String, String>>
+) : BeginEndSection(title, defines) {
+    operator fun String.unaryPlus() {
+        initChild(ElementWithText(this)) {}
+    }
+
+}
+
+abstract class ExtendedBeginEndSection(
+        title: String,
+        defines: List<Pair<String, String>>
+) : BeginEndSectionWithText(title, defines) {
+
+    fun math(text: String) {
+        initChild(BasicLine("math", text, "")) {}
+    }
+
+    fun alignment(init: Alignment.() -> Unit) = initChild(Alignment(), init)
+
     fun frame(
             frameTitle: String,
             vararg defines: Pair<String, String>,
@@ -85,22 +97,25 @@ abstract class ExtendedBeginEndSection(title: String,
     ) = initChild(CustomTag(name, defines = defines.asList()), init)
 }
 
-class CustomTag(title: String, defines: List<Pair<String, String> >) : ExtendedBeginEndSection(title, defines)
+class CustomTag(title: String, defines: List<Pair<String, String>>) : ExtendedBeginEndSection(title, defines)
 
 
-class Frame(frameTitle: String, defines: List<Pair<String, String>>) : ExtendedBeginEndSection("frame", defines) {
+class Frame(frameTitle: String, defines: List<Pair<String, String>>) : BeginEndSectionWithText("frame", defines) {
     init {
         children.add(BasicLine("frametitle", frameTitle, ""))
     }
 }
 
-class ItemList(title: String): ExtendedBeginEndSection(title, listOf()) {
+class ItemList(title: String): BeginEndSection(title, listOf()) {
     fun item(init: Item.() -> Unit) = initChild(Item(), init)
 }
 
-abstract class TagSection(tag: String): BasicSection() {
+abstract class TagSection(tag: String) : ElementWithChildren() {
     init {
         initChild(BasicLine(tag, "", "")) {}
+    }
+    operator fun String.unaryPlus() {
+        initChild(ElementWithText(this)) {}
     }
 }
 
@@ -109,7 +124,7 @@ class Left : TagSection("left")
 class Right : TagSection("right")
 class Center : TagSection("center")
 
-class Alignment: BeginEndSection("alignment", listOf()) {
+class Alignment : BeginEndSection("alignment", listOf()) {
 
     fun left(init: Left.() -> Unit) = initChild(Left(), init)
 
@@ -141,9 +156,7 @@ class Document : ExtendedBeginEndSection("document", listOf()) {
     }
 
     override fun toString(): String {
-        val s = StringBuilder("")
-        render(s)
-        return s.toString()
+        return buildString(this::render)
     }
 
 }

@@ -110,7 +110,6 @@ class TestSource {
                         item {
                             + "b"
                         }
-
                     }
                 }.toString()
         assertEquals(
@@ -219,20 +218,18 @@ class TestSource {
                 """.trimMargin()
                 }
                 frame(frameTitle = "frame1") {
-                    frame(frameTitle = "frame2") {
 
-                    }
+
                 }
                 frame(frameTitle="frametitle", defines = "arg1" to "arg2") {
-                    enumerate {
 
-                        item {
-                            + "a"
-                            math("x+2")
-                        }
-                        item {
-                            + "b"
-                        }
+                }
+                enumerate {
+                    item {
+                        + "a"
+                    }
+                    item {
+                        + "b"
                     }
                 }
                 itemize {
@@ -268,20 +265,16 @@ class TestSource {
                     |\end{pyglist}
                     |\begin{frame}
                     |\frametitle{frame1}
-                    |\begin{frame}
-                    |\frametitle{frame2}
-                    |\end{frame}
                     |\end{frame}
                     |\begin{frame}[arg1=arg2]
                     |\frametitle{frametitle}
+                    |\end{frame}
                     |\begin{enumerate}
                     |\item
                     |a
-                    |\math{x+2}
                     |\item
                     |b
                     |\end{enumerate}
-                    |\end{frame}
                     |\begin{itemize}
                     |\item
                     |c
