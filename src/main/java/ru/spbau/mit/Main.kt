@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
-
 package ru.spbau.mit
 
 import org.antlr.v4.runtime.BufferedTokenStream
@@ -7,6 +5,7 @@ import org.antlr.v4.runtime.CharStreams
 import ru.spbau.mit.ast.AstBuilder
 import ru.spbau.mit.ast.AstNode
 import ru.spbau.mit.ast.ExpressionNode
+import ru.spbau.mit.exception.*
 import ru.spbau.mit.execution.AstExecVisitor
 import ru.spbau.mit.execution.Debugger
 import ru.spbau.mit.execution.SimpleContinuation
@@ -29,7 +28,7 @@ fun buildAstFromExpression(text: String): AstNode {
     return AstBuilder().visit(funParser.expression())
 }
 
-fun printExpressionValue(suspendLambda: suspend () -> Int) {
+fun printValue(suspendLambda: suspend () -> Int) {
     suspendLambda.startCoroutine(object : SimpleContinuation<Int>() {
         override fun resume(value: Int) {
             println(value)
@@ -66,10 +65,10 @@ fun main(args: Array<String>) {
                 "run" -> {
                     debugger.run()
                 }
-                "evaluate" -> {
+                "evaluateIndependently" -> {
                     val text = command.subList(1, command.size).joinToString(" ")
-                    printExpressionValue {
-                        debugger.evaluate(buildAstFromExpression(text) as ExpressionNode)
+                    printValue {
+                        debugger.evaluateIndependently(buildAstFromExpression(text) as ExpressionNode)
                     }
                 }
                 "stop" -> {
@@ -85,9 +84,24 @@ fun main(args: Array<String>) {
             if (exit) {
                 break
             }
+        } catch (e: AlreadyRunException) {
+            println("you have already run program")
+        } catch (e: AlreadyFinishedException) {
+            println("program has already finished")
+        } catch (e: DoubleDefinitionException) {
+            println("program contains an error: " + e.message)
+        } catch (e: DoubleDefinitionException) {
+            println("program contains an error: " + e.message)
+        } catch (e: VarIsNotInScopeException) {
+            println("program contains an error: variable ${e.message} is not in scope")
+        } catch (e: FuncIsNotInScopeException) {
+            println("program contains an error: function ${e.message} is not in scope")
+        } catch (e: IllegalNumberOfArguments) {
+            println("program contains an error: " + e.message)
         } catch (e: Exception) {
             println("program finished with exception " + e.toString())
         }
+
     }
 
 }

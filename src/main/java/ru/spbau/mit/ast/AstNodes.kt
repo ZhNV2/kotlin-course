@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
-
 package ru.spbau.mit.ast
 
 import ru.spbau.mit.execution.ExpressionVisitor

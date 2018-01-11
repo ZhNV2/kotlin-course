@@ -1,5 +1,5 @@
 package ru.spbau.mit.exception
 
-class AlreadyRunException: RuntimeException()
+class AlreadyRunException : RuntimeException()
 
-class AlreadyFinishedException: RuntimeException()
+class AlreadyFinishedException : RuntimeException()

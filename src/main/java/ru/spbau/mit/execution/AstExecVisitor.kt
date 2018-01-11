@@ -6,7 +6,6 @@ import ru.spbau.mit.exception.AlreadyRunException
 import ru.spbau.mit.exception.IllegalNumberOfArguments
 import kotlin.coroutines.experimental.*
 
-@Suppress("EXPERIMENTAL_FEATURE_WARNING")
 class AstExecVisitor private constructor(private var scope: Scope) : AstVisitor<Int?>, Debugger {
 
     private var nextContinuation: Continuation<Unit>? = null
@@ -24,6 +23,13 @@ class AstExecVisitor private constructor(private var scope: Scope) : AstVisitor<
         launch {
             node.accept(this)
         }
+
+    }
+
+    private fun launch(suspendLambda: suspend () -> Unit) {
+        nextContinuation = suspendLambda.createCoroutine(object : SimpleContinuation<Unit>() {
+            override fun resume(value: Unit) {}
+        })
     }
 
     override fun breakPoint(line: Int) {
@@ -46,14 +52,13 @@ class AstExecVisitor private constructor(private var scope: Scope) : AstVisitor<
         breakPointsText.remove(line)
     }
 
-    override suspend fun evaluate(expression: ExpressionNode): Int {
-        val curScope = scope
-        scope = scope.copy()
-        debugMode = false
-        val res = expression.accept(ExpressionExecVisitor())
-        debugMode = true
-        scope = curScope
-        return res
+    override suspend fun evaluateIndependently(expression: ExpressionNode): Int {
+        val copyScope = scope.copy()
+        return AstExecVisitor(copyScope).evaluate(expression)
+    }
+
+    private suspend fun evaluate(expression: ExpressionNode): Int {
+        return expression.accept(ExpressionExecVisitor())
     }
 
     override fun stop() {
@@ -67,11 +72,8 @@ class AstExecVisitor private constructor(private var scope: Scope) : AstVisitor<
     }
 
     override fun continueDebug() {
-        if (nextContinuation == null) {
-            throw AlreadyFinishedException()
-        }
+        val step = nextContinuation ?: throw AlreadyFinishedException()
         outputBuilder = StringBuilder()
-        val step = nextContinuation!!
         nextContinuation = null
         step.resume(Unit)
     }
@@ -88,13 +90,7 @@ class AstExecVisitor private constructor(private var scope: Scope) : AstVisitor<
     override fun lastRunOutput() = output
 
 
-    private fun launch(suspendLambda: suspend () -> Unit) {
-        nextContinuation = suspendLambda.createCoroutine(object : SimpleContinuation<Unit>() {
-            override fun resume(value: Unit) {}
-        })
-    }
-
-    private suspend fun yield() {
+    private suspend fun pauseDebug() {
         return  suspendCoroutine {
             continuation -> nextContinuation = continuation
         }
@@ -106,8 +102,8 @@ class AstExecVisitor private constructor(private var scope: Scope) : AstVisitor<
     private suspend fun checkBreakPoint(node: AstNode) {
         if (debugMode && node.line != lastLine) {
             val expression = breakPoints[node.line]
-            if (expression != null && toBoolean(evaluate(expression))) {
-                yield()
+            if (expression != null && toBoolean(evaluateIndependently(expression))) {
+                pauseDebug()
             }
         }
         lastLine = node.line

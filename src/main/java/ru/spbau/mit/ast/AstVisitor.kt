@@ -1,6 +1,5 @@
 package ru.spbau.mit.ast
 
-@Suppress("EXPERIMENTAL_FEATURE_WARNING")
 interface AstVisitor<T> {
 
     suspend fun visit(fileNode: FileNode): T

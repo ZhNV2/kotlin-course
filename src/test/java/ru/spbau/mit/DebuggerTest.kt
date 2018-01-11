@@ -95,7 +95,7 @@ class DebuggerTest {
         debugger.run()
         debugger.continueDebug()
         assertExpressionValue(4) {
-            debugger.evaluate(BinaryExpressionNode(
+            debugger.evaluateIndependently(BinaryExpressionNode(
                     VarNode("i", LINE),
                     "*",
                     LiteralNode(2, LINE),
@@ -119,7 +119,7 @@ class DebuggerTest {
         debugger.breakPoint(7)
         debugger.run()
         assertExpressionValue(4) {
-            debugger.evaluate(FunctionCallNode(
+            debugger.evaluateIndependently(FunctionCallNode(
                     "foo",
                     mutableListOf(LiteralNode(3, LINE)),
                     LINE
@@ -142,7 +142,7 @@ class DebuggerTest {
         debugger.run()
         debugger.continueDebug()
         assertExpressionValue(1) {
-            debugger.evaluate(FunctionCallNode(
+            debugger.evaluateIndependently(FunctionCallNode(
                     "fib",
                     mutableListOf(LiteralNode(1, LINE)),
                     LINE

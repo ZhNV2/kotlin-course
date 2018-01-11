@@ -17,7 +17,7 @@ interface Debugger {
 
     fun run()
 
-    suspend fun evaluate(expression: ExpressionNode): Int
+    suspend fun evaluateIndependently(expression: ExpressionNode): Int
 
     fun stop()
 
