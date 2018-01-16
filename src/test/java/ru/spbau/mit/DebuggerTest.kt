@@ -4,7 +4,7 @@ import org.junit.Test
 import ru.spbau.mit.ast.*
 import ru.spbau.mit.exception.AlreadyFinishedException
 import ru.spbau.mit.exception.AlreadyRunException
-import ru.spbau.mit.execution.AstExecVisitor
+import ru.spbau.mit.execution.DebugVisitor
 import ru.spbau.mit.execution.Debugger
 import ru.spbau.mit.execution.SimpleContinuation
 import kotlin.coroutines.experimental.startCoroutine
@@ -17,7 +17,7 @@ class DebuggerTest {
 
     @Test
     fun breakPointTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.breakPoint(11)
         debugger.run()
@@ -26,7 +26,7 @@ class DebuggerTest {
 
     @Test
     fun conditionTrueTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.condition(
                 11,
@@ -39,7 +39,7 @@ class DebuggerTest {
 
     @Test
     fun conditionFalseTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.condition(
                 11,
@@ -52,7 +52,7 @@ class DebuggerTest {
 
     @Test(expected = AlreadyRunException::class)
     fun reRunTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.breakPoint(11)
         debugger.run()
@@ -61,7 +61,7 @@ class DebuggerTest {
 
     @Test(expected = AlreadyFinishedException::class)
     fun continueAfterEndTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.run()
         debugger.continueDebug()
@@ -69,7 +69,7 @@ class DebuggerTest {
 
     @Test
     fun removeBreakPointTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.breakPoint(11)
         debugger.remove(11)
@@ -79,7 +79,7 @@ class DebuggerTest {
 
     @Test(expected = AlreadyFinishedException::class)
     fun stopTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.breakPoint(11)
         debugger.run()
@@ -89,7 +89,7 @@ class DebuggerTest {
 
     @Test
     fun evaluateTest() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.breakPoint(11)
         debugger.run()
@@ -114,7 +114,7 @@ class DebuggerTest {
 
     @Test
     fun evaluateDoesNotAffectBasicFlow() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("global_variable"))
         debugger.breakPoint(7)
         debugger.run()
@@ -135,7 +135,7 @@ class DebuggerTest {
 
     @Test
     fun evaluateDoesNotStopOnBreakPoint() {
-        val debugger: Debugger = AstExecVisitor.build()
+        val debugger: Debugger = DebugVisitor.build()
         debugger.load(buildAst("fibonacci"))
         debugger.breakPoint(2)
         debugger.breakPoint(11)

@@ -6,7 +6,7 @@ import ru.spbau.mit.ast.AstBuilder
 import ru.spbau.mit.ast.AstNode
 import ru.spbau.mit.ast.ExpressionNode
 import ru.spbau.mit.exception.*
-import ru.spbau.mit.execution.AstExecVisitor
+import ru.spbau.mit.execution.DebugVisitor
 import ru.spbau.mit.execution.Debugger
 import ru.spbau.mit.execution.SimpleContinuation
 import ru.spbau.mit.parser.FunLexer
@@ -38,7 +38,7 @@ fun printValue(suspendLambda: suspend () -> Int) {
 
 fun main(args: Array<String>) {
 
-    val debugger: Debugger = AstExecVisitor.build()
+    val debugger: Debugger = DebugVisitor.build()
 
     while (true) {
         print(">>")
